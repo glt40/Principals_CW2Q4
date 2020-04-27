@@ -4,7 +4,10 @@ import java.util.Scanner;
 
 public class XORLinkedList {
 
-    // Subclass Item for each "cell" in memory
+    /**
+     * Subclass Item for each "cell" in memory
+     * Each Item holds data and a link: the XOR value of the previous and next indexes in the list
+     */
     static class Item {
         String data;
         int link;
@@ -27,9 +30,9 @@ public class XORLinkedList {
     // Initialise variables
     private int SIZE = 10000;
     private Item[] memoryArr;
-    private String filename;
-    private int headItem = 1;
-    private int tailItem = 4;
+    private String filename = "names2.txt";
+    private int headItem = 0;
+    private int tailItem = 0;
 
     /**
      * Constructor creates a form of "memory" to use, in reality a large array (which is what memory is
@@ -37,27 +40,34 @@ public class XORLinkedList {
      */
     public XORLinkedList() {
         memoryArr = new Item[SIZE];
-        filename = "names2.txt";
-        // TESTING ONLY
         memoryArr[0] = null;
-        memoryArr[1] = new Item("GEMMA", 0 ^ 2);
-        memoryArr[2] = new Item("FIONA", 1 ^ 3);
-        memoryArr[3] = new Item("JUSTIN", 2 ^ 4);
-        memoryArr[4] = new Item("WILL", 3 ^ 0);
     }
 
+    /**
+     * Reads in example strings from the file "filename" and uses insertAfter to put them in the list
+     * If an exception is thrown, a few values are inserted from a hardcoded list
+     */
     public void populateMem() {
         try {
             Scanner s = new Scanner(new File(filename));
-            while (s.hasNext()){
+            while (s.hasNext()) {
                 insertEnd(s.next());
             }
             s.close();
         } catch (FileNotFoundException e) {
             System.out.println("File not found.");
+            String[] backupNames = {"GEMMA", "GEM", "WILL", "FIONA", "MAEVA", "JESS"};
+            for (String name : backupNames
+            ) {
+                insertEnd(name);
+            }
         }
     }
 
+    /**
+     * Prints all the data for each Item in the list
+     * Prints in groups of ten for readability
+     */
     private void printAll() {
         int current = headItem;
         int previous = 0;
@@ -77,6 +87,12 @@ public class XORLinkedList {
         System.out.println();
     }
 
+    /**
+     * Inserts a new Item into the list after the specified string
+     *
+     * @param after  the String of the Item that will precede the new Item in the list
+     * @param newStr the data to be inserted into the new Item in the list
+     */
     public void insertAfter(String after, String newStr) {
         if (findItem(after) == -1) {
             // String not found error
@@ -103,6 +119,12 @@ public class XORLinkedList {
         }
     }
 
+    /**
+     * Inserts a new Item into the list before the specified string
+     *
+     * @param before the String of the Item that will succeed the new Item in the list
+     * @param newStr the data to be inserted into the new Item in the list
+     */
     public void insertBefore(String before, String newStr) {
         try {
             insertAfter(memoryArr[findItemAndPrev(before)[1]].data, newStr);
@@ -112,6 +134,11 @@ public class XORLinkedList {
         }
     }
 
+    /**
+     * Inserts a new Item at the start of the list
+     *
+     * @param newStr the data to be inserted into the new Item in the list
+     */
     private void insertStart(String newStr) {
         int targetIndex = findEmpty();
         memoryArr[targetIndex] = new Item(newStr, headItem);
@@ -120,14 +147,30 @@ public class XORLinkedList {
         headItem = targetIndex;
     }
 
+    /**
+     * Inserts a new Item at the end of the list
+     *
+     * @param newStr the data to be inserted into the new Item in the list
+     */
     private void insertEnd(String newStr) {
         int targetIndex = findEmpty();
         memoryArr[targetIndex] = new Item(newStr, tailItem);
         // update old tail Item
-        memoryArr[tailItem].setLink(targetIndex ^ memoryArr[tailItem].link);
+        if (tailItem != 0) {
+            memoryArr[tailItem].setLink(targetIndex ^ memoryArr[tailItem].link);
+        }
         tailItem = targetIndex;
+        if (headItem == 0) {
+            headItem = targetIndex;
+        }
     }
 
+    /**
+     * Removes the Item in the list after the specified string
+     *
+     * @param after the String of the Item that will precede the new Item in the list
+     * @return the String that was removed
+     */
     public String removeAfter(String after) {
         if (findItem(after) == tailItem) {
             System.out.println("Cannot remove string after tail item.");
@@ -143,13 +186,19 @@ public class XORLinkedList {
         }
     }
 
+    /**
+     * Removes the Item in the list before the specified string
+     *
+     * @param before the String of the Item that will succeed the new Item in the list
+     * @return the String that was removed
+     */
     public String removeBefore(String before) {
         if (findItem(before) == headItem) {
             System.out.println("Cannot remove string before head item.");
             return null;
         }
         try {
-            removeAfter(memoryArr[findItemAndPrev(before)[1]].data);
+            return (memoryArr[findItemAndPrev(before)[1]].data);
         } catch (Exception e) {
             // remove head Item
             String oldHead = memoryArr[headItem].data;
@@ -158,19 +207,32 @@ public class XORLinkedList {
         }
     }
 
+    /**
+     * Removes the item at the start of the list
+     */
     private void removeStart() {
         //FIXME
     }
 
+    /**
+     * Removes the item at the end of the list
+     */
     private void removeEnd() {
         //FIXME
     }
 
-    private int findItem(String name) {
+    /**
+     * Finds the location of the Item with the given data in the list
+     *
+     * @param data the String of the Item to locate
+     * @return the index of the Item with the specified data
+     */
+    private int findItem(String data) {
         int current = headItem;
         int previous = 0;
         do {
-            if (memoryArr[current].data.equals(name)) {
+            //FIXME write own .equals method
+            if (memoryArr[current].data.equals(data)) {
                 return current;
             } else {
                 int tmp = memoryArr[current].getNext(previous);
@@ -182,11 +244,18 @@ public class XORLinkedList {
         return -1;
     }
 
-    private int[] findItemAndPrev(String name) {
+    /**
+     * Finds the location of the Item with the given data in the list, as well as its predecessor
+     *
+     * @param data the String of the Item to locate
+     * @return the index of the Item with the specified data and the Item before it
+     */
+    private int[] findItemAndPrev(String data) {
         int current = headItem;
         int previous = 0;
         do {
-            if (memoryArr[current].data.equals(name)) {
+            // FIXME own .equals method
+            if (memoryArr[current].data.equals(data)) {
                 return new int[]{current, previous};
             } else {
                 int tmp = memoryArr[current].getNext(previous);
@@ -198,6 +267,11 @@ public class XORLinkedList {
         return new int[]{-1};
     }
 
+    /**
+     * Finds the next available empty index in "memory", memoryArr
+     *
+     * @return the index of the empty space
+     */
     private int findEmpty() {
         for (int i = 1; i < SIZE; i++) {
             if (memoryArr[i] == null) {
@@ -208,15 +282,18 @@ public class XORLinkedList {
         return SIZE;
     }
 
+    /**
+     * Called by the main method, demonstrated the functionality of the XOR Linked List
+     */
     public void run() {
         populateMem();
         printAll();
         // FIXME give arguments
-        insertAfter();
-        insertBefore();
-        System.out.println(removeAfter() + " removed");
-        System.out.println(removeBefore() + " removed");
-        printAll();
+//        insertAfter();
+//        insertBefore();
+//        System.out.println(removeAfter() + " removed");
+//        System.out.println(removeBefore() + " removed");
+//        printAll();
     }
 
     /**
