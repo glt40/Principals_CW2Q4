@@ -24,7 +24,6 @@ public class XORLinkedList {
         public void setLink(int newLink) {
             link = newLink;
         }
-
     }
 
     // Initialise variables
@@ -78,10 +77,12 @@ public class XORLinkedList {
                 System.out.println();
             }
             item = memoryArr[current];
-            System.out.print(item.data + ", " + "\t");
-            int tmp = item.getNext(previous);
-            previous = current;
-            current = tmp;
+            if (item != null) {
+                System.out.print(item.data + ", " + "\t");
+                int tmp = item.getNext(previous);
+                previous = current;
+                current = tmp;
+            } else {break;}
             i++;
         } while (current != 0);
         System.out.println();
@@ -172,12 +173,26 @@ public class XORLinkedList {
      * @return the String that was removed
      */
     public String removeAfter(String after) {
-        if (findItem(after) == tailItem) {
+        int targetIndex = findItem(after);
+        if (targetIndex == tailItem) {
             System.out.println("Cannot remove string after tail item.");
             return null;
         }
         try {
-            // FIXME write removeAfter function
+            // record the link of the Item to remove and remove it
+            int oldLink = memoryArr[targetIndex].link;
+            String oldData = memoryArr[targetIndex].data;
+            memoryArr[targetIndex] = null;
+            // find the index for next and previous items
+            int prevIndex = findItemAndPrev(after)[1];
+            int nextIndex = oldLink ^ (findItem(after));
+            // calculate new links
+            int newLinkPrev = memoryArr[prevIndex].link ^ targetIndex ^ nextIndex;
+            int newLinkNext = memoryArr[nextIndex].link ^ targetIndex ^ prevIndex;
+            // update links
+            memoryArr[prevIndex].setLink(newLinkNext);
+            memoryArr[nextIndex].setLink(newLinkPrev);
+            return oldData;
         } catch (Exception e) {
             String oldTail = memoryArr[tailItem].data;
             // remove tail Item
@@ -211,14 +226,28 @@ public class XORLinkedList {
      * Removes the item at the start of the list
      */
     private void removeStart() {
-        //FIXME
+        // assign the variables we need
+        int newHeadItem = memoryArr[headItem].link;
+        int nextIndex = headItem ^ memoryArr[newHeadItem].link;
+        // change the link for the new head item and delete the old head item
+        memoryArr[newHeadItem].setLink(nextIndex);
+        memoryArr[headItem] = null;
+        // change the headItem variable to point to the new head
+        headItem = newHeadItem;
     }
 
     /**
      * Removes the item at the end of the list
      */
     private void removeEnd() {
-        //FIXME
+        // assign the variables we need
+        int newTailItem = memoryArr[tailItem].link;
+        int prevIndex = tailItem ^ memoryArr[newTailItem].link;
+        // change the link for the new tail item and delete the old tail item
+        memoryArr[newTailItem].setLink(prevIndex);
+        memoryArr[tailItem] = null;
+        // change the tailItem variable to point to the new tail
+        tailItem = newTailItem;
     }
 
     /**
@@ -231,8 +260,8 @@ public class XORLinkedList {
         int current = headItem;
         int previous = 0;
         do {
-            //FIXME write own .equals method
-            if (memoryArr[current].data.equals(data)) {
+            if (memoryArr[current] == null) {return -1;}
+            if (isEqual(data, memoryArr[current].data)) {
                 return current;
             } else {
                 int tmp = memoryArr[current].getNext(previous);
@@ -254,8 +283,7 @@ public class XORLinkedList {
         int current = headItem;
         int previous = 0;
         do {
-            // FIXME own .equals method
-            if (memoryArr[current].data.equals(data)) {
+            if (isEqual(data, memoryArr[current].data)) {
                 return new int[]{current, previous};
             } else {
                 int tmp = memoryArr[current].getNext(previous);
@@ -283,21 +311,41 @@ public class XORLinkedList {
     }
 
     /**
+     * You can compare strings by calling string.compareTo(string2)
+     * However, in the interests of re-implementation of our own methods, I have used my own compare function
+     *
+     * @return true if strings equal, otherwise false
+     */
+    private boolean isEqual(String string1, String string2) {
+        char[] string1Arr = string1.toCharArray();
+        char[] string2Arr = string2.toCharArray();
+        int string1Len = string1Arr.length;
+        if (string1Len != string2Arr.length) {return false;}
+        for (int i = 0; i < string1Len; i++) {
+            if (string1Arr[i] != string2Arr[i]) {return false;}
+        }
+        return true;
+    }
+
+    /**
      * Called by the main method, demonstrated the functionality of the XOR Linked List
      */
     public void run() {
         populateMem();
         printAll();
-        // FIXME give arguments
-//        insertAfter();
-//        insertBefore();
-//        System.out.println(removeAfter() + " removed");
-//        System.out.println(removeBefore() + " removed");
-//        printAll();
+        insertAfter("KRAIG", "JINX");
+        insertAfter("GEMMA", "TOM NOOK");
+        insertBefore("ISABELLE", "K.K. SLIDER");
+        insertBefore("TOMMY", "CRAZY REDD");
+        System.out.println(removeAfter("JESS") + " removed");
+        System.out.println(removeAfter("ZELDA") + " removed");
+        System.out.println(removeBefore("KITTY") + " removed");
+        System.out.println(removeBefore("MERLIN") + " removed");
+        printAll();
     }
 
     /**
-     * Main method creates a new  instance of the class and calls run
+     * Main method creates a new instance of the class and calls run
      */
     public static void main(String[] args) {
         XORLinkedList linkedList = new XORLinkedList();
