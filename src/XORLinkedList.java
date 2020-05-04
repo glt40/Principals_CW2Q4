@@ -78,7 +78,7 @@ public class XORLinkedList {
             }
             item = memoryArr[current];
             if (item != null) {
-                System.out.print(item.data + ", " + "\t");
+                System.out.print(item.data + ",  ");
                 int tmp = item.getNext(previous);
                 previous = current;
                 current = tmp;
